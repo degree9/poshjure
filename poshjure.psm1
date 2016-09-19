@@ -1,17 +1,58 @@
-﻿#Autoloadfiles
+<#
+	Poshjure
+    
+    by Matthew Ratzke
+#>
+function Import-PoshjFile {
 
-Get-ChildItem ("$PSScriptRoot\Lifecycle\") | Where `
-    { $_.Name -notlike '__*' -and $_.Name -like '*.ps1'} | ForEach `
-    { . $_.FullName }
+    Param([string] $Path)
 
-Get-ChildItem ("$PSScriptRoot\Communications\") | Where `
-    { $_.Name -notlike '__*' -and $_.Name -like '*.ps1'} | ForEach `
-    { . $_.FullName }
+    $loadfile = [clojure.clr.api.Clojure]::var("clojure.core", "load-file")
 
-Get-ChildItem ("$PSScriptRoot\Common\") | Where `
-    { $_.Name -notlike '__*' -and $_.Name -like '*.ps1'} | ForEach `
-    { . $_.FullName }
+    $loadfile.invoke([clojure.clr.api.Clojure]::read($Path))
+}
 
-Get-ChildItem ("$PSScriptRoot\Data\") | Where `
-    { $_.Name -notlike '__*' -and $_.Name -like '*.ps1'} | ForEach `
-    { . $_.FullName }
+function Invoke-PoshjEval {
+
+    Param([string] $Body)
+    
+    $eval = [clojure.clr.api.Clojure]::var("clojure.core", "eval")
+
+    $eval.invoke([clojure.clr.api.Clojure]::read($Body))
+
+}
+
+function Start-PoshjREPL {
+    
+    While ($input) {
+
+        $input = Read-Host -Prompt "Poshjure>"
+        
+        Invoke-PoshjEval -Body $input
+
+    }
+
+}
+
+function Start-Poshjure {
+    Param(
+        [boolean] $repl = $true,
+        [string] $eval,
+        [string] $script)
+    
+    if ($eval -ne "") {
+
+        Invoke-PoshjEval -Body $eval
+
+    } elseif ($script -ne "") {
+
+        Import-PoshjFile -Path $script
+
+    } elseif ($repl) {
+        
+        Write-Output ""
+        Start-PoshjREPL
+
+    }
+
+}
